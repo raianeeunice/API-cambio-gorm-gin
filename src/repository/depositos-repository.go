@@ -2,7 +2,6 @@ package repository
 
 import (
 	"cambioo/src/entity"
-	"math"
 
 	"gorm.io/gorm"
 )
@@ -48,5 +47,5 @@ func (db *depositoConnection) FindSaldoTotal() float64 {
 	var saldo float64
 	db.connection.Table("depositos").Select("sum(valor_deposito) as saldo").Scan(&saldo) //query nativa
 	
-	return math.Floor(saldo*100)/100
+	return saldo
 }

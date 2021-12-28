@@ -5,8 +5,6 @@ import (
 	"cambioo/src/entity"
 	"cambioo/src/helper"
 	"cambioo/src/service"
-	"cambioo/src/utils"
-	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -20,7 +18,7 @@ type DepositoController interface {
 	AllDepositos(context *gin.Context)
 	FindDepositoByID(context *gin.Context)
 	FindSaldoTotal(context *gin.Context)
-	Cambio(context *gin.Context)
+	ConverterMoeda(context *gin.Context)
 }
 
 type depositoController struct {
@@ -34,7 +32,6 @@ func NewdepositoController(depositoServ service.DepositoService) DepositoControl
 	}
 }
 
-
 func (c *depositoController) InsertDeposito(context *gin.Context) {
 	var depositoCreateDTO dto.DepositoCreateDTO
 	errDTO := context.ShouldBind(&depositoCreateDTO)
@@ -42,16 +39,22 @@ func (c *depositoController) InsertDeposito(context *gin.Context) {
 		res := helper.BuildErrorResponse("Falha ao processar o pedido", errDTO.Error(), helper.EmptyObj{})
 		context.JSON(http.StatusBadRequest, res)
 	} else {
-		result := c.depositoService.InsertDeposito(depositoCreateDTO)
-		response := helper.BuildResponse(true, "OK", result)
-		context.JSON(http.StatusCreated, response)
+		err := depositoCreateDTO.Validar()
+		if err != nil {
+			res := helper.BuildErrorResponse("Valor inválido", err.Error(), helper.EmptyObj{})
+			context.JSON(http.StatusBadRequest, res)
+		} else {
+			result := c.depositoService.InsertDeposito(depositoCreateDTO)
+			response := helper.BuildResponse(true, "OK", result)
+			context.JSON(http.StatusCreated, response)
+		}
 	}
 }
 
 func (c *depositoController) AllDepositos(context *gin.Context) {
 	var depositos []entity.Depositos = c.depositoService.AllDepositos()
 
-	if (depositos == nil) {
+	if depositos == nil {
 		res := helper.BuildErrorResponse("Dados não encontrados", "Nenhum dado fornecido", helper.EmptyObj{})
 		context.JSON(http.StatusNotFound, res)
 	} else {
@@ -78,10 +81,10 @@ func (c *depositoController) FindDepositoByID(context *gin.Context) {
 	}
 }
 
-func (c *depositoController) FindSaldoTotal(context *gin.Context){
+func (c *depositoController) FindSaldoTotal(context *gin.Context) {
 	saldoTotal := c.depositoService.FindSaldoTotal()
 
-	if (saldoTotal == 0) {
+	if saldoTotal == 0 {
 		res := helper.BuildErrorResponse("Dados não encontrados", "Nenhum saldo na conta", helper.EmptyObj{})
 		context.JSON(http.StatusNotFound, res)
 	} else {
@@ -92,18 +95,20 @@ func (c *depositoController) FindSaldoTotal(context *gin.Context){
 	}
 }
 
-func (c *depositoController) Cambio(context *gin.Context){
+func (c *depositoController) ConverterMoeda(context *gin.Context) {
 	moeda := strings.ToUpper(context.Param("moeda"))
-	saldoTotal := c.depositoService.FindSaldoTotal()
-	conversao := utils.Converte(saldoTotal, moeda)
-	conversao = math.Floor(conversao*100)/100
-
-	if (conversao == 0) {
+	err := c.depositoService.ValidarMoedaService(moeda)
+	if err != nil {
+		res := helper.BuildErrorResponse("Dados não encontrados", err.Error(), helper.EmptyObj{})
+		context.JSON(http.StatusNotFound, res)
+	}
+	conversao := c.depositoService.ConverterMoeda(moeda)
+	if conversao == 0 {
 		res := helper.BuildErrorResponse("Dados não encontrados", "Nenhum dado com o tipo de moeda fornecido", helper.EmptyObj{})
 		context.JSON(http.StatusNotFound, res)
 	} else {
 		res := helper.BuildResponse(true, "OK", gin.H{
-			"saldo_total_convertido" : conversao,
+			"saldo_total_convertido": conversao,
 		})
 		context.JSON(http.StatusOK, res)
 	}

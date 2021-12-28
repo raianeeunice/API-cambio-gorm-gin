@@ -11,10 +11,14 @@ import (
 )
 
 var (
-	db             *gorm.DB                  = config.SetupDatabaseConnection()
+	db                 *gorm.DB                      = config.SetupDatabaseConnection()
 	depositoRepository repository.DepositoRepository = repository.NewDepositoRepository(db)
-	depositoService    service.DepositoService       = service.NewdepositoService(depositoRepository)
+	depositoService    service.DepositoService       = service.NewdepositoService(depositoRepository, moedaRepository)
 	depositoController controller.DepositoController = controller.NewdepositoController(depositoService)
+	
+	moedaRepository repository.MoedaRepository = repository.NewMoedaRepository(db)
+	moedaService    service.MoedaService      = service.NewMoedaService(moedaRepository)
+	moedaController controller.MoedaController = controller.NewMoedaController(moedaService)
 )
 
 func main() {
@@ -31,8 +35,14 @@ func main() {
 	saldoRoutes := r.Group("api/saldo")
 	{
 		saldoRoutes.GET("/", depositoController.FindSaldoTotal)
-		saldoRoutes.GET("/:moeda", depositoController.Cambio)
+		saldoRoutes.GET("/:moeda", depositoController.ConverterMoeda)
+	}
+
+	moedaRoutes := r.Group("api/moeda")
+	{
+		moedaRoutes.GET("/", moedaController.AllMoedas)
+		moedaRoutes.POST("/", moedaController.InsertMoeda)
 	}
 
 	r.Run()
-} 
+}

@@ -4,7 +4,9 @@ import (
 	"cambioo/src/dto"
 	"cambioo/src/entity"
 	"cambioo/src/repository"
+	"errors"
 	"log"
+	"math"
 
 	"github.com/mashingan/smapping"
 )
@@ -15,17 +17,23 @@ type DepositoService interface {
 	AllDepositos() []entity.Depositos
 	FindDepositoByID(depositoID uint64) entity.Depositos
 	FindSaldoTotal() float64
-	Cambio() float64
+	ConverterMoeda(moeda string) float64
+	ValidarMoedaService(moeda string) error
+	converter(valor float64, moeda string) float64
+	calculaCambio(moedaCotacao float64) float64
+	ajusteCasaDecimal(valor float64) float64
 }
 
 type depositoService struct {
 	depositoRepository repository.DepositoRepository
+	moedaRepository repository.MoedaRepository
 }
 
 //NewdepositoService cria uma nova instância de depositoService
-func NewdepositoService(depositoRepo repository.DepositoRepository) DepositoService {
+func NewdepositoService(depositoRepo repository.DepositoRepository, moedaRepo repository.MoedaRepository) DepositoService {
 	return &depositoService{
 		depositoRepository: depositoRepo,
+		moedaRepository: moedaRepo,
 	}
 }
 
@@ -48,9 +56,36 @@ func (service *depositoService) FindDepositoByID(depositoID uint64) entity.Depos
 }
 
 func (service *depositoService) FindSaldoTotal() float64{
-	return service.depositoRepository.FindSaldoTotal()
+	var saldo = service.depositoRepository.FindSaldoTotal()
+	return service.ajusteCasaDecimal(saldo)
 }
 
-func (service *depositoService) Cambio() float64 {
-	return service.depositoRepository.FindSaldoTotal()
+func (service *depositoService) ConverterMoeda(moeda string) float64 {
+	saldoTotal := service.depositoRepository.FindSaldoTotal()
+	conversao := service.converter(saldoTotal, moeda)
+	return service.ajusteCasaDecimal(conversao)
+}
+
+func (service *depositoService) ValidarMoedaService(moeda string) error {
+	validar := service.moedaRepository.FindBySigla(moeda)
+	if validar == ""{
+		return errors.New("sigla inexistnte")
+	}
+	return nil
+}
+
+func (service *depositoService) converter(valor float64, moeda string) float64 {
+	cotacao := service.moedaRepository.FindCotacaoBySigla(moeda);
+	return valor/service.calculaCambio(cotacao)
+}
+
+func (service *depositoService) calculaCambio(cotacao float64) float64 {
+	iof := 0.0638
+	taxaCambio := 0.16
+	valorFinal := cotacao + (cotacao * iof) + (cotacao * taxaCambio)
+	return service.ajusteCasaDecimal(valorFinal)
+}
+
+func (service *depositoService) ajusteCasaDecimal(valor float64) float64{
+	return math.Floor(valor*100)/100
 }

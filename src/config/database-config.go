@@ -28,7 +28,7 @@ func SetupDatabaseConnection() *gorm.DB {
 		panic("Falha ao criar uma conexão com o banco de dados")
 	}
 
-	db.AutoMigrate(&entity.Depositos{})
+	db.AutoMigrate(&entity.Depositos{}, &entity.Moeda{})
 	return db
 }
 

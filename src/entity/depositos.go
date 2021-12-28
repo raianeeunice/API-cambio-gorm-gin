@@ -1,6 +1,8 @@
 package entity
 
-import "time"
+import (
+	"time"
+)
 
 type Depositos struct {
 	ID            uint         `json:"id" gorm:"primaryKey"`
