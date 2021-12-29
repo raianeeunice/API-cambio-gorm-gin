@@ -4,7 +4,6 @@ import (
 	"cambioo/src/dto"
 	"cambioo/src/entity"
 	"cambioo/src/repository"
-	"log"
 
 	"github.com/mashingan/smapping"
 )
@@ -29,7 +28,7 @@ func (service *moedaService) InsertMoeda(moeda dto.MoedaDTO) (entity.Moeda, erro
 	moedaCreate := entity.Moeda{}
 	err := smapping.FillStruct(&moedaCreate, smapping.MapFields(&moeda))
 	if err != nil {
-		log.Fatalf("Failed maps %v: ", err)
+		return entity.Moeda{}, err
 	}
 	res, err := service.moedaRepository.InsertMoeda(moedaCreate)
 	return res, err
