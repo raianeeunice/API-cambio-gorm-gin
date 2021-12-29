@@ -5,7 +5,9 @@ import (
 	"cambioo/src/controller"
 	"cambioo/src/repository"
 	"cambioo/src/service"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -24,6 +26,18 @@ var (
 func main() {
 	defer config.CloseDatabaseConnection(db)
 	r := gin.Default()
+
+	 r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:4200"},
+		AllowMethods:     []string{"PUT", "PATCH", "GET", "OPTIONS", "DELETE"},
+		AllowHeaders:     []string{"Origin"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		AllowOriginFunc: func(origin string) bool {
+			return origin == "https://github.com"
+		},
+		MaxAge: 12 * time.Hour,
+	  }))
 
 	depositoRoutes := r.Group("api/depositos")
 	{
