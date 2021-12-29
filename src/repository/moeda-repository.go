@@ -24,8 +24,7 @@ func NewMoedaRepository(dbConn *gorm.DB) MoedaRepository {
 }
 
 func (db *moedaConnection) InsertMoeda(moeda entity.Moeda) (entity.Moeda, error) {
-	err := db.connection.Save(&moeda).Error
-
+	err := db.connection.Create(&moeda).Error
 	return moeda, err
 }
 
