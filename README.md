@@ -24,9 +24,6 @@
 ## Banco de dados escolhido
 - *MySQL*
 
-## Canal que ensina sobre Golang
-```https://www.youtube.com/channel/UCDG7gCaRawAdyeA5omGRBRA```
-
 ## Observação
 - Precisa criar um arquivo .env com esses dados:
 ``` 
